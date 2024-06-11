@@ -83,7 +83,6 @@ def remove_outer_nan_columns(df):
 		else:
 			break
 	
-	print(columns_to_remove)
 	return df.drop(df.columns[columns_to_remove], axis=1)
 
 def remove_outer_nan_rows(df):
@@ -106,8 +105,8 @@ def remove_outer_nan_rows(df):
 def split_df(df, start, end):
 	new_table = df[start:end]
 	# headers = new_table.iloc[0]
-	splitted_df = pd.DataFrame(new_table)
-	new_df = pd.DataFrame(df[end+1:])
+	splitted_df = pd.DataFrame(df.iloc[start:end,:]).reset_index(drop=True)
+	new_df = pd.DataFrame(df.iloc[end+1:,:]).reset_index(drop=True)
 	return splitted_df, new_df
 
 
@@ -119,8 +118,10 @@ def split_df_into_tables(df):
 	while len(end_boundaries) > 0:
 		table, df = split_df(df, 0, end_boundaries[0])
 		tables.append(table)
-		remove_outer_nan_rows(df)
+		df = remove_outer_nan_rows(df)
 		end_boundaries = df.index[df.isna().all(axis=1) == True].tolist()
+
+	tables.append(df)
 
 	return tables
 
@@ -139,8 +140,10 @@ def split_df_into_tables_by_columns(df):
 	while len(end_boundaries) > 0:
 		table, df = split_df_by_column(df, 0, end_boundaries[0])
 		tables.append(table)
-		remove_outer_nan_columns(df)
+		df = remove_outer_nan_columns(df)
 		end_boundaries = df.columns[df.isna().all(axis=0) == True].tolist()
+
+	tables.append(df)
 
 	return tables
 
@@ -148,12 +151,46 @@ def split_df_into_tables_by_columns(df):
 # Receive the question and ask ChatGPT or any other AI model
 # Show the answer
 
+def parse_xlsx(df, pass_loop):
+	tables = [df]
+
+	for _ in range(pass_loop):
+		new_dfs = []
+		for table in tables:
+			tables_from_df = split_df_into_tables(table)
+			new_dfs.extend(tables_from_df)
+		dfs = []
+		# len(new_dfs)
+		for table_df in new_dfs:
+			splitted_tables = split_df_into_tables_by_columns(table_df)
+			dfs.extend(splitted_tables)
+		tables = dfs
+
+	return tables
+
+
 '''
 import pandas as pd
-from main import split_df_into_tables_by_columns
-from main import split_df_into_tables
+from main import split_df
+from main import parse_xlsx
 
 df = pd.read_excel("./tests/example_0.xlsx", header=None)
-tables = split_df_into_tables(df)
-split_df_into_tables_by_columns(tables[0])
+t1 = parse_xlsx(df, 1)
+
+df = pd.read_excel("./tests/example_1.xlsx", header=None)
+t2 = parse_xlsx(df, 1)
+
+df = pd.read_excel("./tests/example_2.xlsx", header=None)
+t3 = parse_xlsx(df, 1)
+
+pass_loop = 2
+tables = [df]
+
+for i in range(pass_loop):
+	for table in df:
+		tables_from_df = split_df_into_tables(df)
+		new_tables = []
+		for table in tables:
+			splitted_tables = split_df_into_tables_by_columns(table)
+			new_tables.extend(splitted_tables)
 '''
