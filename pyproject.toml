@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "smart-spreadsheet"
+version = "0.1.0"
+description = "An app that can read and process a spreadsheet, answering question about it"
+authors = ["Fabio Kubo <fabio_harada@hotmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
