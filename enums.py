@@ -1,5 +1,5 @@
 from enum import StrEnum
 
-class AvailableLLMs(StrEnum):
+class AvailableLLM(StrEnum):
 	BAMBOO = "bamboo"
 	OPENAI = "openai"
