@@ -7,6 +7,9 @@ from auto_parser import AutoParser
 
 import typer
 
+from utils import suppress_stderr
+from typing_extensions import Annotated
+
 def make_agent(dfs: list[pd.DataFrame], llm) -> Agent:
 	return Agent(dfs, config={"llm": llm, "enforce_privacy": True})
 
@@ -20,17 +23,20 @@ bamboo_agent = make_agent(t3, bamboo)
 
 app = typer.Typer()
 
-import sys
+suppress_stderr()
 
-# sys.tracebacklimit = 0
+from enum import StrEnum
 
-def nothing(*args):
-	pass
+class AvailableLLMs(StrEnum):
+	BAMBOO = "bamboo"
+	OPENAI = "openai"
 
-sys.stderr.write = nothing
 
 @app.command()
-def auto(file_path: str):
+def auto(
+	file_path: Annotated[str, typer.Argument(help="The path to XLSX file to parse the tables")],
+	llm: Annotated[AvailableLLMs, typer.Argument(help="The LLM you want to answer your questions")] = AvailableLLMs.BAMBOO
+):
 	print("Starting to parse the file...")
 	parser = AutoParser()
 	tables = parser.parse_xlsx(file_path)
