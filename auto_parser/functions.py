@@ -89,7 +89,7 @@ def parse_tables_from_df(df: pd.DataFrame) -> list[pd.DataFrame]:
 		tables_from_df = parse_tables_from_df_by_columns(table)
 		new_tables.extend(tables_from_df)		
 
-	return new_tables
+	return merge_tables(new_tables)
 
 
 def merge_consecutives_dfs(tables: list[pd.DataFrame]) -> list[pd.DataFrame]:
