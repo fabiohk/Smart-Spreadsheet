@@ -21,7 +21,7 @@ BAMBOO_API_KEY="$2..."
 OPEN_API_TOKEN="sk..."
 ```
 
-Now, you'll have two options to run the app:
+Now, you'll have three options to run the app:
 
 ### Auto Parser
 
@@ -33,6 +33,18 @@ python main.py auto <FILE_PATH> bamboo
 
 ## Using OpenAI Models
 python main.py auto <FILE_PATH> openai
+```
+
+### Border Parser
+
+In this mode, the app will try to parse the Excel file without any input. The difference with the `auto` mode is that this parser considers the cell border style to parse the tables. To run in this mode, type:
+
+```sh
+## Using BambooLLM
+python main.py border <FILE_PATH> bamboo
+
+## Using OpenAI Models
+python main.py border <FILE_PATH> openai
 ```
 
 ### Manual Parser
