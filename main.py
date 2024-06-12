@@ -1,73 +1,10 @@
 import pandas as pd
+from pandasai import Agent
 
 ## Main Flow
 # Receive spreadsheet files
 # Read spreadsheet
-# Drop columns entirely composed of NaN
 
-# Identify boundaries
-
-## For example 1 (only row boundaries)
-'''
-import pandas as pd
-
-df = pd.read_excel("./tests/example_0.xlsx", header=None)
-end_boundaries = df.index[df.isna().all(axis=1) == True].tolist()[0]
-tables = []
-
-# Drop first rows with NaN
-
-start_boundary = 0
-for end_boundary in end_boundaries:
-	new_table = df[start_boundary:end_boundary]
-	headers = new_table.iloc[0]
-	new_df  = pd.DataFrame(new_table.values[1:], columns=headers)
-	new_df
-	tables.append(new_df)
-	start_boundary = end_boundary + 1
-'''
-
-## For example 2 (only column boundaries)
-'''
-df = tables[0]
-end_boundaries = df.index[df.isna().all(axis=1) == True].tolist()
-
-tables_col = []
-start_boundary = 0
-for end_boundary in end_boundaries:
-	new_table = df.iloc[:,start_boundary:int(end_boundary)]
-	new_table
-	tables_col.append(new_table)
-	start_boundary = int(end_boundary) + 1
-
-def group_consecutive(test_list):
-	result = []
-    i = 0
-    while i < len(test_list):
-        j = i
-        while j < len(test_list) - 1 and test_list[j+1] == test_list[j]+1:
-            j += 1
-        result.append((test_list[i], test_list[j]))
-        i = j + 1
-    return result
-
-def remove_outer_nan_columns(df):
-	columns_to_remove = []
-	is_consecutive = True
-	for i, col in enumerate(df.columns.isna()):
-		if col and is_consecutive:
-			columns_to_remove.append(i)
-		else:
-			is_consecutive = False
-	is_consecutive = True
-	for i, col in reversed(list(enumerate(df.columns.isna()))):
-		if col and is_consecutive:
-			columns_to_remove.append(i)
-		else:
-			is_consecutive = False
-	columns=columns_to_remove
-
-'''
 def remove_outer_nan_columns(df):
 	columns_to_remove = []
 	is_consecutive = True
@@ -250,6 +187,28 @@ def merge_tables_column_priority(tables):
 
 	return tables
 
+def convert_columns(df):
+	df.columns = [str(col) for col in df.columns]
+
+def define_first_row_as_column(df):
+	new_header = df.iloc[0]
+	df = df[1:]
+	df.columns = new_header
+	return df
+
+
+def make_agent(dfs, llm):
+	return Agent(dfs, config={"llm": llm, "enforce_privacy": True})
+
+
+def clear_tables(tables):
+	tables = [define_first_row_as_column(remove_outer_nan_rows(t)).fillna(0) for t in tables]
+
+	for t in tables:
+		convert_columns(t)
+
+	return tables
+
 '''
 import pandas as pd
 from main import split_df
@@ -259,32 +218,42 @@ from main import merge_tables
 from main import split_df_into_tables
 from main import split_df_into_tables_by_columns
 from main import remove_outer_nan_columns
+from main import remove_outer_nan_rows
 from main import merge_consecutives_dfs_column_priority
 from main import merge_tables_column_priority
+from main import convert_columns
+from main import define_first_row_as_column
+from main import clear_tables
+import os
+from pandasai import Agent
+from pandasai.llm import BambooLLM
+from pandasai.llm import OpenAI
+
+openai = OpenAI(api_token=os.getenv("OPENAI_API_TOKEN", default=""))
+bamboo = BambooLLM(api_key=os.getenv("BAMBOO_API_KEY", default=""))
 
 df = pd.read_excel("./tests/example_0.xlsx", header=None)
 t1 = parse_xlsx(df, 1)
-t1_ = merge_tables(t1)
-t1_col = merge_tables_column_priority(t1)
+t1 = merge_tables(t1)
+t1 = clear_tables(t1)
+
+openai_agent = make_agent(t1, openai)
+bamboo_agent = make_agent(t1, bamboo)
 
 df = pd.read_excel("./tests/example_1.xlsx", header=None)
 t2 = parse_xlsx(df, 1)
-t2_ = merge_tables(t2)
-t2_col = merge_tables_column_priority(t2)
+t2 = merge_tables(t2)
+t2 = clear_tables(t2)
+
+openai_agent = make_agent(t2, openai)
+bamboo_agent = make_agent(t2, bamboo)
+
 
 df = pd.read_excel("./tests/example_2.xlsx", header=None)
 t3 = parse_xlsx(df, 1)
-t3_ = merge_tables(t3)
-t3_col = merge_tables_column_priority(t3)
+t3 = merge_tables(t3)
+t3 = clear_tables(t3)
 
-pass_loop = 2
-tables = [df]
-
-for i in range(pass_loop):
-	for table in df:
-		tables_from_df = split_df_into_tables(df)
-		new_tables = []
-		for table in tables:
-			splitted_tables = split_df_into_tables_by_columns(table)
-			new_tables.extend(splitted_tables)
+openai_agent = make_agent(t3, openai)
+bamboo_agent = make_agent(t3, bamboo)
 '''
