@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "An app that can read and process a spreadsheet, answering question about it"
 authors = ["Fabio Kubo <fabio_harada@hotmail.com>"]
 readme = "README.md"
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.12"

@@ -8,9 +8,6 @@ from utils import suppress_stderr
 
 app = typer.Typer()
 
-suppress_stderr()
-
-
 @app.command()
 def auto(
     file_path: Annotated[
@@ -20,6 +17,7 @@ def auto(
         AvailableLLM, typer.Argument(help="The LLM you want to answer your questions")
     ] = AvailableLLM.BAMBOO,
 ):
+    suppress_stderr()
     auto_command(file_path, llm)
 
 
@@ -32,6 +30,7 @@ def manual(
         AvailableLLM, typer.Argument(help="The LLM you want to answer your questions")
     ] = AvailableLLM.BAMBOO,
 ):
+    suppress_stderr()
     manual_command(file_path, llm)
 
 
