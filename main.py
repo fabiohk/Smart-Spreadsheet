@@ -25,13 +25,9 @@ app = typer.Typer()
 
 suppress_stderr()
 
-from enum import StrEnum
+from enums import AvailableLLMs
 
-from llms.bamboo import make_bamboo_agent
-
-class AvailableLLMs(StrEnum):
-	BAMBOO = "bamboo"
-	OPENAI = "openai"
+from llms import make_agent
 
 
 @app.command()
@@ -42,7 +38,7 @@ def auto(
 	print("Starting to parse the file...")
 	parser = AutoParser()
 	tables = parser.parse_xlsx(file_path)
-	agent = make_bamboo_agent(tables)
+	agent = make_agent(tables, llm)
 
 	while True:
 		question = typer.prompt("Ask me anything")
