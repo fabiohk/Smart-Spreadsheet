@@ -169,10 +169,52 @@ def parse_xlsx(df, pass_loop):
 	return tables
 
 
+def merge_consecutives_dfs(tables):
+	merged_tables = []
+	last_pass_has_merged_tables = False
+	i = 0
+
+	while i < len(tables) - 1:
+		if len(tables[i].columns) == len(tables[i+1].columns):
+			merged_table = pd.concat([tables[i], tables[i+1]], axis=0)
+			last_pass_has_merged_tables = True
+			i += 1
+		elif len(tables[i].index) == len(tables[i+1].index):
+			merged_table = pd.concat([tables[i], tables[i+1]], axis=1)
+			last_pass_has_merged_tables = True
+			i += 1
+		else:
+			merged_table = tables[i]
+			last_pass_has_merged_tables = False
+
+		merged_tables.append(merged_table.reset_index(drop=True))
+		i += 1
+
+	if i == len(tables) - 1:
+		merged_tables.append(tables[-1])
+
+	return merged_tables
+
+
+def merge_tables(tables):
+	previous_number_of_tables = len(tables)
+	tables = merge_consecutives_dfs(tables)
+	current_number_of_tables = len(tables)
+
+	while previous_number_of_tables != current_number_of_tables:
+		previous_number_of_tables = current_number_of_tables
+		tables = merge_consecutives_dfs(tables)
+		current_number_of_tables = len(tables)
+
+	return tables
+
+
 '''
 import pandas as pd
 from main import split_df
 from main import parse_xlsx
+from main import merge_consecutives_dfs
+from main import merge_tables
 
 df = pd.read_excel("./tests/example_0.xlsx", header=None)
 t1 = parse_xlsx(df, 1)
