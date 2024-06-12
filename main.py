@@ -8,6 +8,7 @@ from utils import suppress_stderr
 
 app = typer.Typer()
 
+
 @app.command()
 def auto(
     file_path: Annotated[

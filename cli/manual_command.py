@@ -7,7 +7,7 @@ from llms import make_agent
 from manual_parser import ManualParser
 from manual_parser.types import TableInfo
 
-from .main_service import main_loop
+from .main_service import export_to_json, main_loop
 
 
 def ask_for_table_info(sheet_name: Optional[str] = None):
@@ -39,5 +39,6 @@ def manual_command(file_path: str, llm: AvailableLLM):
 
     parser = ManualParser()
     tables = parser.parse_xlsx(file_path, tables_info)
+    export_to_json(tables)
     agent = make_agent(tables, llm)
     main_loop(agent)
