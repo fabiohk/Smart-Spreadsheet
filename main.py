@@ -100,7 +100,7 @@ def remove_outer_nan_rows(df):
 		else:
 			break
 
-	return df.drop(df.index[rows_to_remove], axis=0)
+	return df.drop(df.index[rows_to_remove], axis=0).reset_index(drop=True)
 
 def split_df(df, start, end):
 	new_table = df[start:end]
@@ -126,21 +126,23 @@ def split_df_into_tables(df):
 	return tables
 
 def split_df_by_column(df, start, end):
-	splitted_df = df.iloc[:, start:end]
+	splitted_df = df.loc[:, start:end]
 	splitted_df = pd.DataFrame(splitted_df)
-	new_df = pd.DataFrame(df.iloc[:,end+1:])
+	new_df = pd.DataFrame(df.loc[:,end+1:])
 	return splitted_df, new_df
 
 
 def split_df_into_tables_by_columns(df):
 	tables = []
 	df = remove_outer_nan_columns(df)
+	df.columns = range(df.columns.size)
 	end_boundaries = df.columns[df.isna().all(axis=0) == True].tolist()
 
 	while len(end_boundaries) > 0:
 		table, df = split_df_by_column(df, 0, end_boundaries[0])
 		tables.append(table)
 		df = remove_outer_nan_columns(df)
+		df.columns = range(df.columns.size)
 		end_boundaries = df.columns[df.isna().all(axis=0) == True].tolist()
 
 	tables.append(df)
@@ -160,7 +162,6 @@ def parse_xlsx(df, pass_loop):
 			tables_from_df = split_df_into_tables(table)
 			new_dfs.extend(tables_from_df)
 		dfs = []
-		# len(new_dfs)
 		for table_df in new_dfs:
 			splitted_tables = split_df_into_tables_by_columns(table_df)
 			dfs.extend(splitted_tables)
@@ -180,7 +181,35 @@ def merge_consecutives_dfs(tables):
 			last_pass_has_merged_tables = True
 			i += 1
 		elif len(tables[i].index) == len(tables[i+1].index):
+			tables[i+1].columns = range(len(tables[i].columns), len(tables[i].columns) + len(tables[i+1].columns))
 			merged_table = pd.concat([tables[i], tables[i+1]], axis=1)
+			last_pass_has_merged_tables = True
+			i += 1
+		else:
+			merged_table = tables[i]
+			last_pass_has_merged_tables = False
+
+		merged_tables.append(merged_table.reset_index(drop=True))
+		i += 1
+
+	if i == len(tables) - 1:
+		merged_tables.append(tables[-1])
+
+	return merged_tables
+
+def merge_consecutives_dfs_column_priority(tables):
+	merged_tables = []
+	last_pass_has_merged_tables = False
+	i = 0
+
+	while i < len(tables) - 1:
+		if len(tables[i].index) == len(tables[i+1].index):
+			tables[i+1].columns = range(len(tables[i].columns), len(tables[i].columns) + len(tables[i+1].columns))
+			merged_table = pd.concat([tables[i], tables[i+1]], axis=1)
+			last_pass_has_merged_tables = True
+			i += 1
+		elif len(tables[i].columns) == len(tables[i+1].columns):
+			merged_table = pd.concat([tables[i], tables[i+1]], axis=0)
 			last_pass_has_merged_tables = True
 			i += 1
 		else:
@@ -209,21 +238,44 @@ def merge_tables(tables):
 	return tables
 
 
+def merge_tables_column_priority(tables):
+	previous_number_of_tables = len(tables)
+	tables = merge_consecutives_dfs_column_priority(tables)
+	current_number_of_tables = len(tables)
+
+	while previous_number_of_tables != current_number_of_tables:
+		previous_number_of_tables = current_number_of_tables
+		tables = merge_consecutives_dfs_column_priority(tables)
+		current_number_of_tables = len(tables)
+
+	return tables
+
 '''
 import pandas as pd
 from main import split_df
 from main import parse_xlsx
 from main import merge_consecutives_dfs
 from main import merge_tables
+from main import split_df_into_tables
+from main import split_df_into_tables_by_columns
+from main import remove_outer_nan_columns
+from main import merge_consecutives_dfs_column_priority
+from main import merge_tables_column_priority
 
 df = pd.read_excel("./tests/example_0.xlsx", header=None)
 t1 = parse_xlsx(df, 1)
+t1_ = merge_tables(t1)
+t1_col = merge_tables_column_priority(t1)
 
 df = pd.read_excel("./tests/example_1.xlsx", header=None)
 t2 = parse_xlsx(df, 1)
+t2_ = merge_tables(t2)
+t2_col = merge_tables_column_priority(t2)
 
 df = pd.read_excel("./tests/example_2.xlsx", header=None)
 t3 = parse_xlsx(df, 1)
+t3_ = merge_tables(t3)
+t3_col = merge_tables_column_priority(t3)
 
 pass_loop = 2
 tables = [df]
