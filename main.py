@@ -27,6 +27,8 @@ suppress_stderr()
 
 from enum import StrEnum
 
+from llms.bamboo import make_bamboo_agent
+
 class AvailableLLMs(StrEnum):
 	BAMBOO = "bamboo"
 	OPENAI = "openai"
@@ -40,14 +42,15 @@ def auto(
 	print("Starting to parse the file...")
 	parser = AutoParser()
 	tables = parser.parse_xlsx(file_path)
-	bamboo = BambooLLM(api_key=os.getenv("BAMBOO_API_KEY", default=""))
-	agent = make_agent(tables, bamboo)
-	question = typer.prompt("Ask me anything")
-	answer = agent.chat(question)
-	if "Unfortunately, I was not able to answer your question" in answer:
-		print("Unfortunately, I was not able to answer your question.")
-	else:
-		print(answer)
+	agent = make_bamboo_agent(tables)
+
+	while True:
+		question = typer.prompt("Ask me anything")
+		answer = agent.chat(question)
+		if "Unfortunately, I was not able to answer your question" in answer:
+			print("Unfortunately, I was not able to answer your question.")
+		else:
+			print(answer)
 
 
 @app.command()
